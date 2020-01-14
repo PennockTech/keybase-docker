@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# We want a persistent volume to record state because the act of logging into
+# Keybase on a computer creates a visible public audit record and we don't
+# really want to spam that.
+
+test -d "$HOME/DockerVolumes/keybase-home" || \
+	mkdir -pv -m 0700 "$HOME/DockerVolumes/keybase-home"
+
+# 2020-01: confirmed need both SYS_ADMIN and apparmor:unconfined to work.
+
+exec docker run \
+	--device /dev/fuse --cap-add SYS_ADMIN --security-opt apparmor:unconfined \
+	-v "$HOME/DockerVolumes/keybase-home:/home/keybase" \
+	-it --rm --name keybase keybase
