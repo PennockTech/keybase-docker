@@ -1,0 +1,7 @@
+% curl -LO https://keybase.io/docs/server_security/code_signing_key.asc
+% gpg --allow-weak-digest-algos --import code_signing_key.asc
+
+% docker build -t keybase:latest .
+% docker run -it --rm keybase keybase version
+Client:  5.1.1-20191211223501+15bbb94c23
+% docker tag keybase:latest keybase:5.1.1
