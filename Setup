@@ -8,3 +8,25 @@ Client:  5.1.1-20191211223501+15bbb94c23
 
 
 % docker run -v "$HOME/DockerVolumes/keybase-home:/home/keybase" -it --rm --name keybase keybase
+
+container$ keybase config get -b mountdir
+container$ keybase config set mountdir /run/user/1000/keybase/kbfs
+
+To get KBFS working, we need FUSE working.
+Without using `docker run --privileged`.
+
+With modern Linux kernels and namespaced user mounts, we _should_ just need:
+  docker run --device /dev/fuse
+With older Linux kernels, it might be the more dangerous:
+  docker run --device /dev/fuse --cap-add SYS_ADMIN
+
+With Ubuntu Eoan on kernel 5.3.0, I still need SYS_ADMIN, but also I need:
+  --security-opt apparmor:unconfined
+
+So that's:
+  docker run --device /dev/fuse --cap-add SYS_ADMIN --security-opt apparmor:unconfined \
+             -v "$HOME/DockerVolumes/keybase-home:/home/keybase" \
+             -it --rm --name keybase keybase
+
+That disabling of apparmor is not ideal, but really keybase is supposed to be
+messing with mounts.  I will accept it.
