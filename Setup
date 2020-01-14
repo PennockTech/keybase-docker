@@ -5,3 +5,6 @@
 % docker run -it --rm keybase keybase version
 Client:  5.1.1-20191211223501+15bbb94c23
 % docker tag keybase:latest keybase:5.1.1
+
+
+% docker run -v "$HOME/DockerVolumes/keybase-home:/home/keybase" -it --rm --name keybase keybase

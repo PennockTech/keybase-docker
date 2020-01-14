@@ -6,7 +6,9 @@
 ARG KEYBASE_DEB_URL=https://prerelease.keybase.io/keybase_amd64.deb
 ARG KEYBASE_DEBSIG_URL=https://prerelease.keybase.io/keybase_amd64.deb.sig
 
-FROM buildpack-deps:eoan-curl
+# We use -scm to get the git command because we install git-remote-keybase and
+# want to be able to use it.
+FROM buildpack-deps:eoan-scm
 ARG KEYBASE_DEB_URL
 ARG KEYBASE_DEBSIG_URL
 
@@ -35,6 +37,7 @@ RUN true \
 	&& rm keybase_amd64.deb* /tmp/code_signing_key.asc \
 	&& rm -rf /root/.gnupg
 
+VOLUME /home/keybase
 USER keybase
 WORKDIR /home/keybase
 CMD ["bash"]
