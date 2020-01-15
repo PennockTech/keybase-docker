@@ -36,6 +36,10 @@ RUN true \
 RUN true \
 	&& apt-get install -f -y
 
+# Additional convenience packages for me, when inside the container.
+RUN true \
+	&& apt-get install -y zsh less vim-tiny tree
+
 RUN true \
 	&& groupadd -g 1000 keybase \
 	&& useradd --create-home -g keybase -u 1000 keybase \
