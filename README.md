@@ -51,3 +51,23 @@ $ exit
 
 % ls ~/DockerVolumes/keybase-home/repos/my-team/repo-in-team
 ```
+
+## Dotfiles
+
+You have a persistent "inside keybase container" home directory, you can drop
+files into it either inside or outside of Docker.
+
+* A simple shell config which emits a notice reminding you of commands might
+  suit; see `example.bashrc`
+* Creating a `.gitconfig` will help if you use the `keybase:` schema git
+  remotes inside the Container.
+
+Since dealing with SSH-based git remotes, with agent forwarding, inside a
+Docker container is a little troublesome, I recommend taking advantage of the
+common directory and just don't do that inside the keybase container.  Talk
+with regular non-keybase git remotes outside the container, `keybase:` schema
+remotes inside the container.
+
+It's much less hassle to accept the limitation than to try to support other
+people when working with SSH agent forwarding, across both native Docker and
+Docker-inside-implicit-VM.
