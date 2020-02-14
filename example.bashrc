@@ -34,8 +34,9 @@ if [[ $- == *i* ]]; then
   cat >&2 <<'EOBANNER'
 This is a Docker Keybase container.
 Run:
-  - run_keybase    : to start the service
-  - z              : to use zsh
+  - run_keybase            : to start the service
+  - keybase.is-up-to-date  : to check if a newer release is available
+  - z                      : to use zsh
 Git repositories are checked out as: ~/repos/$TEAM/$REPO/
 KeybaseFS is mounted by `run_keybase`, as /keybase :
   - /keybase/public/YOUR_KEYBASE_HANDLE/

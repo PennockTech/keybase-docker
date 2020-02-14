@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# The page at <https://prerelease.keybase.io/> links to this:
+#readonly CURRENT_LINUX_RELEASE_JSON_URL='http://prerelease.keybase.io.s3.amazonaws.com/update-linux-prod.json'
+# but that hostname doesn't have a valid cert if we switch to https.
+# Meanwhile, this works for https:
+readonly CURRENT_LINUX_RELEASE_JSON_URL='https://prerelease.keybase.io/update-linux-prod.json'
+#
+# I'm not aware of any documentation or guarantees for that URL,
+# but it seems to work, so roll with it.
+
+progname="$(basename "$0" .sh)"
+
+available="$(curl -LSs "$CURRENT_LINUX_RELEASE_JSON_URL" | jq -er .version)"
+
+installed="$(keybase --version)"
+installed="${installed##* }"
+
+if [[ "$available" != "$installed" ]]; then
+	printf '%s: keybase installed is: %s\n' "$progname" "$installed"
+	printf '%s: keybase available is: %s\n' "$progname" "$available"
+	exit 2
+fi
+
+exit 0

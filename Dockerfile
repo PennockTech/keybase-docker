@@ -37,8 +37,9 @@ RUN true \
 	&& apt-get install -f -y
 
 # Additional convenience packages for me, when inside the container.
+# NB: jq is needed for keybase.is-up-to-date, so keep at least that.
 RUN true \
-	&& apt-get install -y zsh less vim-tiny tree
+	&& apt-get install -y zsh less vim-tiny tree jq
 
 RUN true \
 	&& groupadd -g 1000 keybase \
@@ -47,6 +48,8 @@ RUN true \
 	&& rm -r /var/lib/apt/lists/* \
 	&& rm keybase_amd64.deb* /tmp/code_signing_key.asc \
 	&& rm -rf /root/.gnupg
+
+COPY keybase.is-up-to-date /usr/local/bin/./
 
 VOLUME /home/keybase
 USER keybase
