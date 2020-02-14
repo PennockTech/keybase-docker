@@ -42,6 +42,8 @@ $ exit
 $ run_keybase
 $ ls /keybase/public/philpennock/PGP-Keys/
 
+$ keybase.is-up-to-date        # does a phone-home-to-keybase curl
+
 $ mkdir repos repos/my-team
 $ cd repos/my-team
 $ git clone keybase://team/my-team/repo-in-team
