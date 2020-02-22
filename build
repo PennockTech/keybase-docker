@@ -1,0 +1,45 @@
+#!/bin/sh -eu
+set -eu
+
+progname="$(basename "$0" .sh)"
+note() { printf >&2 '%s: %s\n' "$progname" "$*"; }
+die() { for x; do note "$x"; done; exit 1; }
+
+[ $# -eq 0 ] || die "no build parameters are accepted"
+# Use an environment variable to build as something other than 'keybase'
+: "{IMAGE:=keybase}"
+readonly IMAGE
+
+cd "$(dirname "$0")"
+
+# One of the files we know needs to be inside the image, as a sanity check.
+require=keybase.is-up-to-date
+test -f "$require" || die "missing required file: $require"
+
+# Make sure that the keybase runtime user matches the invoker's
+# run-time user.
+kb_uid=$(id -u)
+
+build() {
+  docker build --build-arg "KEYBASE_UID=$kb_uid" "$@" .
+}
+
+build --target root -t "$IMAGE:latest-root"
+build -t "$IMAGE:latest"
+
+# We don't need the full permissions to just ask keybase its version,
+# nor a home-dir created.
+full_version="$(docker run --rm "$IMAGE:latest" keybase --version)"
+# Should look something like:
+#   keybase version 5.2.0-20200130211428+cf82db8320
+# (unless you also allocate a tty and get extra junk)
+
+short_version="${full_version##* }"
+short_version="${short_version%%-*}"
+
+note "mapping '${full_version}' to '${short_version}' for tagging"
+
+docker tag "$IMAGE:latest"      "$IMAGE:${short_version}"
+docker tag "$IMAGE:latest-root" "$IMAGE:${short_version}-root"
+
+docker image list "$IMAGE"

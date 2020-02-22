@@ -1,15 +1,107 @@
-#!/bin/sh
+#!/bin/sh -eu
+set -eu
 
 # We want a persistent volume to record state because the act of logging into
 # Keybase on a computer creates a visible public audit record and we don't
 # really want to spam that.
 
-test -d "$HOME/DockerVolumes/keybase-home" || \
-	mkdir -pv -m 0700 "$HOME/DockerVolumes/keybase-home"
+# This is the default persistent volume; change here, or use -H
+# If you give -H a path which does not start '/' then it will be taken
+# as relative to HOME_PARENT.
+# There's no option for HOME_PARENT because I expect that using -H
+# direcltly is likely to be just as easy.
+# If it's not, we can add an option.
+HOME_PARENT="$HOME/DockerVolumes"
+HOME_BIND="$HOME_PARENT/keybase-home"
+
+# This is what we run.  By not including a tag, we use 'latest'.
+# You can use -I to change this, or -T to specify a tag
+IMAGE_NAME=keybase
+
+# No explicit tag name by default, so we let Docker provide an implicit.
+# Use -T to change this, or to override a tag in -I.
+TAG_NAME=''
+
+# This is the standard name we give the container.
+# We quite explicitly want this to be a system-wide singleton, so by using an
+# explicit name we get locking from Docker.
+# Be very careful about changing this and think through what might happen if
+# you have two running keybase containers.
+# I'm deliberately not providing an option to change this.
+readonly CONTAINER_NAME=keybase
+
+# End of defaults
+# ######################################################################
+
+progname="$(basename "$0" .sh)"
+warn() { printf >&2 '%s: %s\n' "$progname" "$*"; }
+die() { for x; do warn "$x"; done; exit 1; }
+
+usage() {
+  ev="${1:-1}"
+  [ "$ev" = 0 ] || exec >&2
+  cat <<EOUSAGE
+Usage: $progname [-options]
+  -H HOME    Change bind for home inside Docker [$HOME_BIND]
+  -I IMAGE   Change the image to run [$IMAGE_NAME]
+  -T TAG     Specify a tag, to override implicit :latest
+
+The default invocation, without options, should almost always be correct.
+
+If you supply HOME which doesn't start with a '/' by the time this program
+sees it, then it will be interpreted as relative to: [$HOME_PARENT]
+EOUSAGE
+  exit "$ev"
+}
+
+# opt_foo=default
+while getopts ':hvH:I:T:' arg; do
+  case "$arg" in
+    h) usage 0 ;;
+    H) HOME_BIND="$OPTARG" ;;
+    I) IMAGE_NAME="$OPTARG" ;;
+    T) TAG_NAME="$OPTARG" ;;
+    :) die "missing required option for -$OPTARG; see -h for help" ;;
+    \?) die "unknown option -$OPTARG; see -h for help" ;;
+    *) die "unhandled option -$arg; CODE BUG" ;;
+  esac
+done
+shift $((OPTIND - 1))
+#if [ $# -gt 0 ]; then
+#  die "no non-option parameters are accepted; see -h for help" \
+#    "garbage ignored: $*"
+#fi
+
+case "$HOME_BIND" in
+  /*) true ;;
+  *) HOME_BIND="$HOME_PARENT/$HOME_BIND" ;;
+esac
+
+# We deliberately don't do much validation of the image and tag names,
+# in case future Docker changes add new syntax.  The only time we worry
+# is in case both -I and -T were given.
+if [ -n "$TAG_NAME" ]; then
+  case "$IMAGE_NAME" in
+    *:*)
+      warn "given tag both in -I and -T, -T wins"
+      full_image_name="${IMAGE_NAME%%:*}:$TAG_NAME"
+      ;;
+    *)
+      full_image_name="$IMAGE_NAME:$TAG_NAME"
+      ;;
+  esac
+else
+  full_image_name="$IMAGE_NAME"
+fi
+
+test -d "$HOME_BIND" || \
+  mkdir -pv -m 0700 "$HOME_BIND"
 
 # 2020-01: confirmed need both SYS_ADMIN and apparmor:unconfined to work.
 
 exec docker run \
-	--device /dev/fuse --cap-add SYS_ADMIN --security-opt apparmor:unconfined \
-	-v "$HOME/DockerVolumes/keybase-home:/home/keybase" \
-	-it --rm --name keybase keybase
+  --device /dev/fuse --cap-add SYS_ADMIN --security-opt apparmor:unconfined \
+  -v "$HOME_BIND:/home/keybase" \
+  -it --rm --name "$CONTAINER_NAME" "$full_image_name" "$@"
+
+# vim: set sw=2 et :
