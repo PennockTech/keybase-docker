@@ -67,10 +67,6 @@ while getopts ':hvH:I:T:' arg; do
   esac
 done
 shift $((OPTIND - 1))
-#if [ $# -gt 0 ]; then
-#  die "no non-option parameters are accepted; see -h for help" \
-#    "garbage ignored: $*"
-#fi
 
 case "$HOME_BIND" in
   /*) true ;;
