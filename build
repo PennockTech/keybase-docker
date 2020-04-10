@@ -7,7 +7,7 @@ die() { for x; do note "$x"; done; exit 1; }
 
 [ $# -eq 0 ] || die "no build parameters are accepted"
 # Use an environment variable to build as something other than 'keybase'
-: "{IMAGE:=keybase}"
+: "${IMAGE:=keybase}"
 readonly IMAGE
 
 cd "$(dirname "$0")"
