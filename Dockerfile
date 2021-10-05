@@ -3,16 +3,18 @@
 #
 # I've made it more ugly.
 
-ARG KEYBASE_DEB_URL=https://prerelease.keybase.io/keybase_amd64.deb
-ARG KEYBASE_DEBSIG_URL=https://prerelease.keybase.io/keybase_amd64.deb.sig
+ARG KEYBASE_LINUX_VERSIONS_URL=http://prerelease.keybase.io.s3.amazonaws.com/update-linux-prod.json
+ARG KEYBASE_DEB_BASEURL=https://s3.amazonaws.com/prerelease.keybase.io/linux_binaries/deb/
+ARG KEYBASE_DEB_ARCH=amd64
 
 ARG KEYBASE_UID=1000
 
 # We use -scm to get the git command because we install git-remote-keybase and
 # want to be able to use it.
-FROM buildpack-deps:eoan-scm AS root
-ARG KEYBASE_DEB_URL
-ARG KEYBASE_DEBSIG_URL
+FROM buildpack-deps:focal-scm AS root
+ARG KEYBASE_LINUX_VERSIONS_URL
+ARG KEYBASE_DEB_BASEURL
+ARG KEYBASE_DEB_ARCH
 ARG KEYBASE_UID
 
 LABEL maintainer="Phil Pennock <noc+keybase-docker@pennock-tech.com>"
@@ -26,12 +28,18 @@ RUN true \
 	&& apt-get update && apt-get install -y \
 		fuse \
 		libappindicator1 \
+		jq \
 		--no-install-recommends \
 	&& gpg --import /tmp/code_signing_key.asc
 
+# Beware that /bin/sh is dash which doesn't support ${current_version//+/.}
 RUN true \
-	&& curl -Lo keybase_amd64.deb ${KEYBASE_DEB_URL} \
-	&& curl -Lo keybase_amd64.deb.sig ${KEYBASE_DEBSIG_URL} \
+	&& current_version="$(curl -fSs "${KEYBASE_LINUX_VERSIONS_URL}" | jq -r .version)" \
+	&& fnv="$(printf '%s\n' "$current_version" | tr + .)" \
+	&& rfu="${KEYBASE_DEB_BASEURL}keybase_${fnv}_${KEYBASE_DEB_ARCH}.deb" \
+	&& printf 'URL: <%s>\n' "$rfu" \
+	&& curl -Lo keybase_amd64.deb "$rfu" \
+	&& curl -Lo keybase_amd64.deb.sig "$rfu.sig" \
 	&& gpg --verify keybase_amd64.deb.sig keybase_amd64.deb \
 	&& { dpkg -i keybase_amd64.deb || true ; }
 
