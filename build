@@ -1,6 +1,8 @@
 #!/bin/sh -eu
 set -eu
 
+REFRESH_DOCKER_IMAGES=' buildpack-deps:focal-scm '
+
 progname="$(basename "$0" .sh)"
 note() { printf >&2 '%s: %s\n' "$progname" "$*"; }
 die() { for x; do note "$x"; done; exit 1; }
@@ -23,6 +25,10 @@ kb_uid=$(id -u)
 build() {
   docker build --build-arg "KEYBASE_UID=$kb_uid" "$@" .
 }
+
+for dep in $REFRESH_DOCKER_IMAGES; do
+  docker pull -- "$dep"
+done
 
 build --target root -t "$IMAGE:latest-root"
 build -t "$IMAGE:latest"
